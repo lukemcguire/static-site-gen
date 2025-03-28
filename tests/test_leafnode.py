@@ -40,9 +40,7 @@ class TestLeafNode(unittest.TestCase):
     def test_to_html_with_multiple_props(self):
         props = {"class": "my-class", "id": "my-id", "data-value": "123"}
         node = LeafNode("Hello", "span", props)
-        self.assertEqual(
-            node.to_html(), '<span class="my-class" id="my-id" data-value="123">Hello</span>'
-        )
+        self.assertEqual(node.to_html(), '<span class="my-class" id="my-id" data-value="123">Hello</span>')
 
     def test_repr(self):
         node = LeafNode("Hello", "p")
@@ -51,9 +49,8 @@ class TestLeafNode(unittest.TestCase):
     def test_repr_with_props(self):
         props = {"class": "my-class", "id": "my-id"}
         node = LeafNode("Hello", "p", props)
-        self.assertEqual(
-            repr(node), "HTMLNode(p, Hello, 0 child nodes, {'class': 'my-class', 'id': 'my-id'})"
-        )
+        self.assertEqual(repr(node), "HTMLNode(p, Hello, 0 child nodes, {'class': 'my-class', 'id': 'my-id'})")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,7 +22,7 @@ class TextType(Enum):
         IMAGES: Represents text that is an image.
     """
 
-    NORMAL = auto()
+    TEXT = auto()
     BOLD = auto()
     ITALIC = auto()
     CODE = auto()

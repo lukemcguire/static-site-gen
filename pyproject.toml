@@ -64,7 +64,7 @@ select = [
     # ruff
     "RUF",
     # tryceratops
-    "TRY",
+    # "TRY",
     # pydocstyle
     "D",
     # pydoclint

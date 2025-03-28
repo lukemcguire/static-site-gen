@@ -8,8 +8,8 @@ which represent HTML elements.
 Usage: python main.py
 """
 
-from textnode import TextNode, TextType
 from leafnode import LeafNode
+from textnode import TextNode, TextType
 
 
 def text_node_to_html_node(text_node: TextNode) -> LeafNode:
@@ -29,7 +29,7 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode:
         Exception: If the TextNode has an unknown text type.
     """
     match text_node.text_type:
-        case TextType.NORMAL:
+        case TextType.TEXT:
             return LeafNode(text_node.text, None)
         case TextType.BOLD:
             return LeafNode(text_node.text, "b")
@@ -38,10 +38,13 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode:
         case TextType.CODE:
             return LeafNode(text_node.text, "code")
         case TextType.LINK:
-            props = {"href": text_node.url}
+            url = text_node.url if text_node.url is not None else ""
+            props = {"href": url}
             return LeafNode(text_node.text, "a", props)
         case TextType.IMAGE:
-            props = {"src": text_node.url, "alt": text_node.text}
+            url = text_node.url if text_node.url is not None else ""
+            alt_text = text_node.text if text_node.text is not None else ""
+            props = {"src": url, "alt": alt_text}
             return LeafNode("", "img", props)
         case _:
             raise Exception("Unknown text type.")

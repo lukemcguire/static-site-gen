@@ -1,13 +1,13 @@
 import unittest
+from enum import Enum, auto
 
 from main import text_node_to_html_node
 from textnode import TextNode, TextType
-from enum import Enum, auto
 
 
 class TestMain(unittest.TestCase):
     def test_text_node_to_html_node_normal(self):
-        text_node = TextNode("Normal text", TextType.NORMAL)
+        text_node = TextNode("Normal text", TextType.TEXT)
         leaf_node = text_node_to_html_node(text_node)
         self.assertIsNone(leaf_node.tag)
         self.assertEqual(leaf_node.value, "Normal text")

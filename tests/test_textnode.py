@@ -16,7 +16,7 @@ class TestTextNode(unittest.TestCase):
 
     def test_eq_different_type(self):
         node = TextNode("This is a text node", TextType.BOLD)
-        node2 = TextNode("This is a text node", TextType.NORMAL)
+        node2 = TextNode("This is a text node", TextType.TEXT)
         self.assertNotEqual(node, node2)
 
     def test_eq_different_url(self):
@@ -47,9 +47,9 @@ class TestTextNode(unittest.TestCase):
         self.assertEqual(repr(node), "TextNode(This is bold text, BOLD, None)")
 
     def test_init_normal(self):
-        node = TextNode("Normal text", TextType.NORMAL)
+        node = TextNode("Normal text", TextType.TEXT)
         self.assertEqual(node.text, "Normal text")
-        self.assertEqual(node.text_type, TextType.NORMAL)
+        self.assertEqual(node.text_type, TextType.TEXT)
         self.assertIsNone(node.url)
 
     def test_init_bold(self):

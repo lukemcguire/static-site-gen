@@ -61,12 +61,9 @@ class HTMLNode:
         """Converts the node's properties to an HTML attribute string.
 
         Returns:
-            str: An HTML attribute string (e.g., ' class="my-class" id="my-id" ').
+            str: An HTML attribute string (e.g., ' class="my-class" id="my-id"').
                 Returns an empty string if there are no properties.
         """
         if self.props is None:
             return ""
-        html = " "
-        for key, value in self.props.items():
-            html += f'{key}="{value}" '
-        return html
+        return " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())

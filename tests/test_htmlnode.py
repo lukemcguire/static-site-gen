@@ -44,7 +44,7 @@ class TestHTMLNode(unittest.TestCase):
     def test_props_to_html_with_props(self):
         props = {"class": "my-class", "id": "my-id", "data-value": "123"}
         node = HTMLNode(props=props)
-        expected = ' class="my-class" id="my-id" data-value="123" '
+        expected = ' class="my-class" id="my-id" data-value="123"'
         self.assertEqual(node.props_to_html(), expected)
 
     def test_to_html_not_implemented(self):

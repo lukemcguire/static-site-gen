@@ -82,5 +82,6 @@ class TestTextNode(unittest.TestCase):
         self.assertEqual(node.text_type, TextType.ITALIC)
         self.assertIsNone(node.url)
 
+
 if __name__ == "__main__":
     unittest.main()

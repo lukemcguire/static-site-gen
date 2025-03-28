@@ -20,7 +20,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 
 [tool.mypy]
-files = ["."]
+files = ["src"]
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
@@ -83,7 +83,7 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["D", "S101"]
 
 [tool.ruff.format]
 preview = true

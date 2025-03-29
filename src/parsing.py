@@ -160,3 +160,29 @@ def extract_markdown_links(text: str) -> list[tuple[str, str]]:
         For example: [("anchor text", "https://example.com")]
     """
     return re.findall(r"(?<!!)\[(.*?)\]\((https?:\/\/.*?)\)", text)
+
+
+def text_to_textnodes(text: str) -> list["TextNode"]:
+    """Converts a string of text into a list of TextNodes.
+
+    This function takes a string of text and parses it, identifying
+    various Markdown elements such as bold, italic, code, links, and
+    images. It then converts these elements into a list of TextNode
+    objects, each representing a segment of the original text with
+    its corresponding type and any associated data (e.g., URLs for
+    links and images).
+
+    Args:
+        text: The input string of text to be parsed.
+
+    Returns:
+        A list of TextNode objects representing the parsed text.
+    """
+    nodes = [TextNode(text, TextType.TEXT)]
+    delimiters = ("**", "_", "*", "`")
+    text_types = (TextType.BOLD, TextType.ITALIC, TextType.ITALIC, TextType.CODE)
+    for delimiter, text_type in zip(delimiters, text_types, strict=False):
+        nodes = split_nodes_delimiter(nodes, delimiter, text_type)
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+    return nodes

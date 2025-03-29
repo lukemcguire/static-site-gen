@@ -1,5 +1,7 @@
 """Text parsing utility functions."""
 
+import re
+
 from textnode import TextNode, TextType
 
 
@@ -41,3 +43,40 @@ def split_nodes_delimiter(old_nodes: list["TextNode"], delimiter: str, text_type
 
         parsed_nodes.extend(new_nodes)
     return parsed_nodes
+
+
+def extract_markdown_images(text: str) -> list[tuple[str, str]]:
+    """Extracts image information from Markdown text.
+
+    This function searches the input string for Markdown image syntax
+    `![alt text](URL)` and extracts the alt text and URL.
+
+    Args:
+        text: The Markdown text to search.
+
+    Returns:
+        A list of tuples, where each tuple contains the alt text and the URL
+        of an image found in the text. If no images are found, returns an
+        empty list.
+        For example: [("alt text", "https://example.com/image.png")]
+    """
+    return re.findall(r"!\[(.*?)\]\((https?:\/\/.*?)\)", text)
+
+
+def extract_markdown_links(text: str) -> list[tuple[str, str]]:
+    """Extracts link information from Markdown text.
+
+    This function searches the input string for Markdown link syntax
+    `[anchor text](URL)` and extracts the anchor text and URL. It will not
+    extract links that are part of an image.
+
+    Args:
+        text: The Markdown text to search.
+
+    Returns:
+        A list of tuples, where each tuple contains the anchor text and the
+        URL of a link found in the text. If no links are found, returns an
+        empty list.
+        For example: [("anchor text", "https://example.com")]
+    """
+    return re.findall(r"(?<!!)\[(.*?)\]\((https?:\/\/.*?)\)", text)

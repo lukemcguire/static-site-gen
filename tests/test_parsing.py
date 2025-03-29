@@ -1,6 +1,6 @@
 import unittest
 
-from parsing import split_nodes_delimiter
+from parsing import extract_markdown_images, extract_markdown_links, split_nodes_delimiter
 from textnode import TextNode, TextType
 
 
@@ -161,6 +161,77 @@ class TestSplitNodesDelimiter(unittest.TestCase):
             TextNode(" text", TextType.TEXT),
         ]
         self.assertEqual(result, expected)
+
+
+class TestExtractMarkdownImages(unittest.TestCase):
+    def test_no_images(self):
+        text = "This is a test with no images."
+        self.assertEqual(extract_markdown_images(text), [])
+
+    def test_single_image(self):
+        text = "![Alt text](https://example.com/image.png)"
+        expected = [("Alt text", "https://example.com/image.png")]
+        self.assertEqual(extract_markdown_images(text), expected)
+
+    def test_multiple_images(self):
+        text = "![Alt 1](https://example.com/image1.png) Some text ![Alt 2](https://example.com/image2.jpg)"
+        expected = [
+            ("Alt 1", "https://example.com/image1.png"),
+            ("Alt 2", "https://example.com/image2.jpg"),
+        ]
+        self.assertEqual(extract_markdown_images(text), expected)
+
+    def test_image_with_different_protocols(self):
+        text = "![Alt text](http://example.com/image.png)"
+        expected = [("Alt text", "http://example.com/image.png")]
+        self.assertEqual(extract_markdown_images(text), expected)
+
+    def test_image_with_text_around(self):
+        text = "Some text before ![Alt text](https://example.com/image.png) and after"
+        expected = [("Alt text", "https://example.com/image.png")]
+        self.assertEqual(extract_markdown_images(text), expected)
+
+    def test_image_with_invalid_url(self):
+        text = "![Alt text](bad url text)"
+        self.assertEqual(extract_markdown_images(text), [])
+
+
+class TestExtractMarkdownLinks(unittest.TestCase):
+    def test_no_links(self):
+        text = "This is a test with no links."
+        self.assertEqual(extract_markdown_links(text), [])
+
+    def test_single_link(self):
+        text = "[Link text](https://example.com)"
+        expected = [("Link text", "https://example.com")]
+        self.assertEqual(extract_markdown_links(text), expected)
+
+    def test_multiple_links(self):
+        text = "[Link 1](https://example.com/1) Some text [Link 2](https://example.com/2)"
+        expected = [
+            ("Link 1", "https://example.com/1"),
+            ("Link 2", "https://example.com/2"),
+        ]
+        self.assertEqual(extract_markdown_links(text), expected)
+
+    def test_link_with_different_protocols(self):
+        text = "[Link text](http://example.com)"
+        expected = [("Link text", "http://example.com")]
+        self.assertEqual(extract_markdown_links(text), expected)
+
+    # def test_link_with_no_anchor_text(self):
+    #     text = ""
+    #     expected = [("", "https://example.com")]
+    #     self.assertEqual(extract_markdown_links(text), expected)
+
+    def test_link_with_text_around(self):
+        text = "Some text before [Link text](https://example.com) and after"
+        expected = [("Link text", "https://example.com")]
+        self.assertEqual(extract_markdown_links(text), expected)
+
+    def test_link_with_invalid_url(self):
+        text = "[Link text](bad url)"
+        self.assertEqual(extract_markdown_links(text), [])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,12 @@
 import unittest
 
-from parsing import extract_markdown_images, extract_markdown_links, split_nodes_delimiter
+from parsing import (
+    extract_markdown_images,
+    extract_markdown_links,
+    split_nodes_delimiter,
+    split_nodes_image,
+    split_nodes_link,
+)
 from textnode import TextNode, TextType
 
 
@@ -155,9 +161,9 @@ class TestSplitNodesDelimiter(unittest.TestCase):
         result = split_nodes_delimiter(nodes, "**", TextType.BOLD)
         expected = [
             TextNode("This is ", TextType.TEXT),
-            TextNode("", TextType.BOLD),
-            TextNode("bold", TextType.TEXT),
-            TextNode("", TextType.BOLD),
+            TextNode("", TextType.BOLD),  # First ** pair encloses ""
+            TextNode("bold", TextType.TEXT),  # Between the middle ** and **
+            TextNode("", TextType.BOLD),  # Second ** pair encloses ""
             TextNode(" text", TextType.TEXT),
         ]
         self.assertEqual(result, expected)
@@ -174,10 +180,10 @@ class TestExtractMarkdownImages(unittest.TestCase):
         self.assertEqual(extract_markdown_images(text), expected)
 
     def test_multiple_images(self):
-        text = "![Alt 1](https://example.com/image1.png) Some text ![Alt 2](https://example.com/image2.jpg)"
+        text = "![Alt 1](https://example.com/image1.png) Some text ![Alt 2](http://example.com/image2.jpg)"
         expected = [
             ("Alt 1", "https://example.com/image1.png"),
-            ("Alt 2", "https://example.com/image2.jpg"),
+            ("Alt 2", "http://example.com/image2.jpg"),
         ]
         self.assertEqual(extract_markdown_images(text), expected)
 
@@ -194,6 +200,8 @@ class TestExtractMarkdownImages(unittest.TestCase):
     def test_image_with_invalid_url(self):
         text = "![Alt text](bad url text)"
         self.assertEqual(extract_markdown_images(text), [])
+        text_ftp = "![Alt text](ftp://example.com/image.png)"
+        self.assertEqual(extract_markdown_images(text_ftp), [])
 
 
 class TestExtractMarkdownLinks(unittest.TestCase):
@@ -207,10 +215,10 @@ class TestExtractMarkdownLinks(unittest.TestCase):
         self.assertEqual(extract_markdown_links(text), expected)
 
     def test_multiple_links(self):
-        text = "[Link 1](https://example.com/1) Some text [Link 2](https://example.com/2)"
+        text = "[Link 1](https://example.com/1) Some text [Link 2](http://example.com/2)"
         expected = [
             ("Link 1", "https://example.com/1"),
-            ("Link 2", "https://example.com/2"),
+            ("Link 2", "http://example.com/2"),
         ]
         self.assertEqual(extract_markdown_links(text), expected)
 
@@ -218,11 +226,6 @@ class TestExtractMarkdownLinks(unittest.TestCase):
         text = "[Link text](http://example.com)"
         expected = [("Link text", "http://example.com")]
         self.assertEqual(extract_markdown_links(text), expected)
-
-    # def test_link_with_no_anchor_text(self):
-    #     text = ""
-    #     expected = [("", "https://example.com")]
-    #     self.assertEqual(extract_markdown_links(text), expected)
 
     def test_link_with_text_around(self):
         text = "Some text before [Link text](https://example.com) and after"
@@ -232,6 +235,227 @@ class TestExtractMarkdownLinks(unittest.TestCase):
     def test_link_with_invalid_url(self):
         text = "[Link text](bad url)"
         self.assertEqual(extract_markdown_links(text), [])
+        text_ftp = "[Link text](ftp://example.com)"
+        self.assertEqual(extract_markdown_links(text_ftp), [])
+
+    def test_ignore_image_syntax(self):
+        """Ensure image markdown is not extracted as a link."""
+        text = "This is text with an ![image link](https://example.com/img.png) and a [real link](https://example.com)."
+        expected = [("real link", "https://example.com")]
+        self.assertEqual(extract_markdown_links(text), expected)
+
+
+# --- New Test Classes ---
+
+
+class TestSplitNodesImage(unittest.TestCase):
+    def test_split_image_empty_nodes(self):
+        nodes = []
+        result = split_nodes_image(nodes)
+        self.assertEqual(result, [])
+
+    def test_split_image_non_text_nodes_only(self):
+        nodes = [TextNode("bold text", TextType.BOLD), TextNode("italic text", TextType.ITALIC)]
+        result = split_nodes_image(nodes)
+        self.assertEqual(result, nodes)
+
+    def test_split_image_no_images(self):
+        nodes = [TextNode("This text has no images, not even ![invalid](url).", TextType.TEXT)]
+        result = split_nodes_image(nodes)
+        self.assertEqual(result, nodes)
+
+    def test_split_image_single_image(self):
+        node = TextNode("Text before ![alt text](https://example.com/img.png) text after", TextType.TEXT)
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("Text before ", TextType.TEXT),
+            TextNode("alt text", TextType.IMAGE, "https://example.com/img.png"),
+            TextNode(" text after", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_at_start(self):
+        node = TextNode("![alt text](http://example.com/img.png) text after", TextType.TEXT)
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("alt text", TextType.IMAGE, "http://example.com/img.png"),
+            TextNode(" text after", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_at_end(self):
+        node = TextNode("Text before ![alt text](https://example.com/img.png)", TextType.TEXT)
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("Text before ", TextType.TEXT),
+            TextNode("alt text", TextType.IMAGE, "https://example.com/img.png"),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_multiple_images(self):
+        node = TextNode(
+            "Image 1: ![alt1](https://url1.com/a.jpg) and Image 2: ![alt2](http://url2.org/b.png) end.", TextType.TEXT
+        )
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("Image 1: ", TextType.TEXT),
+            TextNode("alt1", TextType.IMAGE, "https://url1.com/a.jpg"),
+            TextNode(" and Image 2: ", TextType.TEXT),
+            TextNode("alt2", TextType.IMAGE, "http://url2.org/b.png"),
+            TextNode(" end.", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_adjacent_images(self):
+        node = TextNode("Before ![alt1](https://url1.com)![alt2](http://url2.net) After", TextType.TEXT)
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("Before ", TextType.TEXT),
+            TextNode("alt1", TextType.IMAGE, "https://url1.com"),
+            TextNode("alt2", TextType.IMAGE, "http://url2.net"),
+            TextNode(" After", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_multiple_nodes_mixed(self):
+        nodes = [
+            TextNode("Node 1 with ![img1](https://url1.com)", TextType.TEXT),
+            TextNode("Node 2 is plain text.", TextType.TEXT),
+            TextNode("Node 3 ![img2](http://url2.com) end", TextType.TEXT),
+            TextNode("Node 4 is bold", TextType.BOLD),
+        ]
+        result = split_nodes_image(nodes)
+        expected = [
+            TextNode("Node 1 with ", TextType.TEXT),
+            TextNode("img1", TextType.IMAGE, "https://url1.com"),
+            TextNode("Node 2 is plain text.", TextType.TEXT),
+            TextNode("Node 3 ", TextType.TEXT),
+            TextNode("img2", TextType.IMAGE, "http://url2.com"),
+            TextNode(" end", TextType.TEXT),
+            TextNode("Node 4 is bold", TextType.BOLD),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_ignores_links(self):
+        node = TextNode("Text with a [link](https://link.com) and ![image](http://image.org).", TextType.TEXT)
+        result = split_nodes_image([node])
+        expected = [
+            TextNode("Text with a [link](https://link.com) and ", TextType.TEXT),
+            TextNode("image", TextType.IMAGE, "http://image.org"),
+            TextNode(".", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_image_ignores_invalid_markdown(self):
+        node = TextNode("Text ![alt](invalid-url) ![alt2](ftp://site.com) end", TextType.TEXT)
+        result = split_nodes_image([node])
+        # Since no valid images are found, the node should remain unchanged
+        self.assertEqual(result, [node])
+
+
+class TestSplitNodesLink(unittest.TestCase):
+    def test_split_link_empty_nodes(self):
+        nodes = []
+        result = split_nodes_link(nodes)
+        self.assertEqual(result, [])
+
+    def test_split_link_non_text_nodes_only(self):
+        nodes = [TextNode("bold text", TextType.BOLD), TextNode("italic text", TextType.ITALIC)]
+        result = split_nodes_link(nodes)
+        self.assertEqual(result, nodes)
+
+    def test_split_link_no_links(self):
+        nodes = [TextNode("This text has no links, not even [invalid](url).", TextType.TEXT)]
+        result = split_nodes_link(nodes)
+        self.assertEqual(result, nodes)
+
+    def test_split_link_single_link(self):
+        node = TextNode("Text before [anchor text](https://example.com) text after", TextType.TEXT)
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("Text before ", TextType.TEXT),
+            TextNode("anchor text", TextType.LINK, "https://example.com"),
+            TextNode(" text after", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_at_start(self):
+        node = TextNode("[anchor text](http://example.com) text after", TextType.TEXT)
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("anchor text", TextType.LINK, "http://example.com"),
+            TextNode(" text after", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_at_end(self):
+        node = TextNode("Text before [anchor text](https://example.com)", TextType.TEXT)
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("Text before ", TextType.TEXT),
+            TextNode("anchor text", TextType.LINK, "https://example.com"),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_multiple_links(self):
+        node = TextNode(
+            "Link 1: [anchor1](https://url1.com) and Link 2: [anchor2](http://url2.org) end.", TextType.TEXT
+        )
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("Link 1: ", TextType.TEXT),
+            TextNode("anchor1", TextType.LINK, "https://url1.com"),
+            TextNode(" and Link 2: ", TextType.TEXT),
+            TextNode("anchor2", TextType.LINK, "http://url2.org"),
+            TextNode(" end.", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_adjacent_links(self):
+        node = TextNode("Before [a1](https://u1.com)[a2](http://u2.net) After", TextType.TEXT)
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("Before ", TextType.TEXT),
+            TextNode("a1", TextType.LINK, "https://u1.com"),
+            TextNode("a2", TextType.LINK, "http://u2.net"),
+            TextNode(" After", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_multiple_nodes_mixed(self):
+        nodes = [
+            TextNode("Node 1 with [link1](https://url1.com)", TextType.TEXT),
+            TextNode("Node 2 is plain text.", TextType.TEXT),
+            TextNode("Node 3 [link2](http://url2.com) end", TextType.TEXT),
+            TextNode("Node 4 is image", TextType.IMAGE, "https://img.url"),
+        ]
+        result = split_nodes_link(nodes)
+        expected = [
+            TextNode("Node 1 with ", TextType.TEXT),
+            TextNode("link1", TextType.LINK, "https://url1.com"),
+            TextNode("Node 2 is plain text.", TextType.TEXT),
+            TextNode("Node 3 ", TextType.TEXT),
+            TextNode("link2", TextType.LINK, "http://url2.com"),
+            TextNode(" end", TextType.TEXT),
+            TextNode("Node 4 is image", TextType.IMAGE, "https://img.url"),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_ignores_images(self):
+        node = TextNode("Text with ![image](https://image.org) and a [link](http://link.com).", TextType.TEXT)
+        result = split_nodes_link([node])
+        expected = [
+            TextNode("Text with ![image](https://image.org) and a ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "http://link.com"),
+            TextNode(".", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
+
+    def test_split_link_ignores_invalid_markdown(self):
+        node = TextNode("Text [anchor](invalid-url) [anchor2](ftp://site.com) end", TextType.TEXT)
+        result = split_nodes_link([node])
+        # Since no valid links are found, the node should remain unchanged
+        self.assertEqual(result, [node])
 
 
 if __name__ == "__main__":

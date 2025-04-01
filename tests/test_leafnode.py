@@ -44,12 +44,12 @@ class TestLeafNode(unittest.TestCase):
 
     def test_repr(self):
         node = LeafNode("Hello", "p")
-        self.assertEqual(repr(node), "HTMLNode(p, Hello, 0 child nodes, None)")
+        self.assertEqual(repr(node), "LeafNode(p, Hello, None)")
 
     def test_repr_with_props(self):
         props = {"class": "my-class", "id": "my-id"}
         node = LeafNode("Hello", "p", props)
-        self.assertEqual(repr(node), "HTMLNode(p, Hello, 0 child nodes, {'class': 'my-class', 'id': 'my-id'})")
+        self.assertEqual(repr(node), "LeafNode(p, Hello, {'class': 'my-class', 'id': 'my-id'})")
 
 
 if __name__ == "__main__":

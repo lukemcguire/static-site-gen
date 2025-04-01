@@ -74,7 +74,7 @@ class TestParentNode(unittest.TestCase):
         child2 = LeafNode("Child 2", "span")
         children = [child1, child2]
         parent = ParentNode("div", children)
-        self.assertEqual(repr(parent), "HTMLNode(div, None, 2 child nodes, None)")
+        self.assertEqual(repr(parent), "ParentNode(div, children: [LeafNode(p, Child 1, None), LeafNode(span, Child 2, None)], None)")
 
     def test_parent_node_repr_with_props(self):
         child1 = LeafNode("Child 1", "p")
@@ -82,8 +82,7 @@ class TestParentNode(unittest.TestCase):
         children = [child1, child2]
         props = {"class": "container", "id": "main"}
         parent = ParentNode("div", children, props)
-        self.assertEqual(repr(parent), "HTMLNode(div, None, 2 child nodes, {'class': 'container', 'id': 'main'})")
-
+        self.assertEqual(repr(parent), "ParentNode(div, children: [LeafNode(p, Child 1, None), LeafNode(span, Child 2, None)], {'class': 'container', 'id': 'main'})")
     def test_parent_node_init_no_props(self):
         child1 = LeafNode("Child 1", "p")
         child2 = LeafNode("Child 2", "span")

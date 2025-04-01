@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from enum import Enum, auto
 
+from leafnode import LeafNode
+
 
 class TextType(Enum):
     """Enumeration of different text types.
@@ -71,3 +73,41 @@ class TextNode:
             A string representation of the TextNode object.
         """
         return f"TextNode({self.text}, {self.text_type.name}, {self.url})"
+
+
+def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+    """Converts a TextNode object to a LeafNode object.
+
+    This function takes a TextNode object and converts it into a LeafNode
+    object, which represents an HTML element. The type of the TextNode
+    determines the HTML tag and properties of the resulting LeafNode.
+
+    Args:
+        text_node: The TextNode object to convert.
+
+    Returns:
+        A LeafNode object representing the HTML element.
+
+    Raises:
+        Exception: If the TextNode has an unknown text type.
+    """
+    match text_node.text_type:
+        case TextType.TEXT:
+            return LeafNode(text_node.text, None)
+        case TextType.BOLD:
+            return LeafNode(text_node.text, "b")
+        case TextType.ITALIC:
+            return LeafNode(text_node.text, "i")
+        case TextType.CODE:
+            return LeafNode(text_node.text, "code")
+        case TextType.LINK:
+            url = text_node.url if text_node.url is not None else ""
+            props = {"href": url}
+            return LeafNode(text_node.text, "a", props)
+        case TextType.IMAGE:
+            url = text_node.url if text_node.url is not None else ""
+            alt_text = text_node.text if text_node.text is not None else ""
+            props = {"src": url, "alt": alt_text}
+            return LeafNode("", "img", props)
+        case _:
+            raise Exception("Unknown text type.")

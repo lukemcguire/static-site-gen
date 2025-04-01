@@ -30,6 +30,14 @@ class ParentNode(HTMLNode):
         """
         super().__init__(tag=tag, value=None, children=children, props=props)
 
+    def __repr__(self) -> str:
+        """Returns a string representation of the ParentNode object.
+
+        Returns:
+            str: A string representation of the ParentNode object.
+        """
+        return f"ParentNode({self.tag}, children: {self.children}, {self.props})"
+
     def to_html(self) -> str:
         """Converts the ParentNode to an HTML string.
 

@@ -42,5 +42,5 @@ class LeafNode(HTMLNode):
         if self.value is None:
             raise ValueError("All leaf nodes must have a value.")
         if self.tag is None:
-            return self.value
+            return self.value.replace("\n", " ")
         return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"

@@ -107,6 +107,17 @@ with a line break
             ["This is a paragraph with a line break\nin the middle", "This is another paragraph\nwith a line break"],
         )
 
+# This is not implemented correctly yet. Need to decide how we want to handle cases like this
+# 
+#     def test_multiple_headings(self):
+#         md = """
+# # Heading 1
+# ## Heading 2
+# ### Heading 3
+# """
+#         blocks = markdown_to_blocks(md)
+#         self.assertEqual(blocks, ["# Heading 1", "## Heading 2", "### Heading 3"])
+
 
 class TestBlockToBlockType(unittest.TestCase):
     def test_paragraph(self):

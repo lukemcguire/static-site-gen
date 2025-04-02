@@ -15,11 +15,17 @@ from blocks import markdown_to_html_node
 from parsing import extract_title
 
 
-def copy_static(src: Path, dest: Path) -> None:
-    """Copies the contents from a source directory to a desination directory.
+def delete_files(directory: Path) -> None:
+    """Recursively deletes all files and directories in path."""
+    for root, dirs, files in directory.walk(top_down=False):
+        for name in files:
+            (root / name).unlink()
+        for name in dirs:
+            (root / name).rmdir()
 
-    First deletes all files from the destination directory, then makes a copy of
-    all files in the source directory.
+
+def copy_tree(src: Path, dest: Path) -> None:
+    """Copies the contents from a source directory to a desination directory.
 
     Args:
         src: The source directory path.
@@ -33,9 +39,6 @@ def copy_static(src: Path, dest: Path) -> None:
         raise TypeError("src and dest must be Path objects")
     if not src.is_dir():
         raise ValueError(f"Source path '{src}' is not a directory or does not exist.")
-
-    # First delete everything from destination directory
-    delete_files(dest)
 
     # copy files
     for dirpath, dirs, files in src.walk():
@@ -59,13 +62,26 @@ def copy_static(src: Path, dest: Path) -> None:
                     print(f"Error copying file '{src_file}' to '{dest_file}': {e}")
 
 
-def delete_files(directory: Path) -> None:
-    """Recursively deletes all files and directories in path."""
-    for root, dirs, files in directory.walk(top_down=False):
-        for name in files:
-            (root / name).unlink()
-        for name in dirs:
-            (root / name).rmdir()
+def copy_and_convert_pages(src: Path, template_path: Path, dest: Path) -> None:
+    """Converts all markdown files in directory tree to html.
+
+    Walks through a directory and takes all markdown files, converts them to
+    html, and creates the html files in the destination directory.
+
+    Args:
+        src: The source directory path.
+        template_path: The path to the template file.
+        dest: The destination directory path.
+    """
+    for dirpath, _, files in src.walk():
+        relative_path = dirpath.relative_to(src)
+        dest_dir = dest / relative_path
+        for file in files:
+            if not file.endswith(".md"):
+                continue
+            src_file = dirpath / file
+            dest_file = dest_dir / "index.html"
+            generate_page(src_file, template_path, dest_file)
 
 
 def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None:
@@ -93,13 +109,16 @@ def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None
 
 def main() -> None:
     """Entry point for the static site generator."""
-    # clean public directory and copy over static files
-    copy_static(Path("static"), Path("public"))
-    # generate a page
-    markdown = Path("content/index.md")
+    static = Path("static")
+    content = Path("content")
     template = Path("templates/template.html")
-    html_file = Path("public/index.html")
-    generate_page(markdown, template, html_file)
+    html_root = Path("public")
+    # clean public directory before making changes
+    delete_files(html_root)
+    # copy over static content
+    copy_tree(static, html_root)
+    # generate static html site
+    copy_and_convert_pages(content, template, html_root)
 
 
 if __name__ == "__main__":

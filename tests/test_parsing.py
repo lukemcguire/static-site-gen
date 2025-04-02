@@ -574,6 +574,7 @@ class TestTextToTextNodes(unittest.TestCase):
             text_to_textnodes(text)
         self.assertIn("Unmatched ** delimiter", str(context.exception))
 
+
 class TestExtractTitle(unittest.TestCase):
     def test_extract_title_valid(self):
         markdown = "# My Page Title\nSome other content"

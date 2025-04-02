@@ -140,7 +140,7 @@ def extract_markdown_images(text: str) -> list[tuple[str, str]]:
         empty list.
         For example: [("alt text", "https://example.com/image.png")]
     """
-    return re.findall(r"!\[(.*?)\]\((https?:\/\/.*?)\)", text)
+    return re.findall(r"!\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
 
 def extract_markdown_links(text: str) -> list[tuple[str, str]]:
@@ -159,7 +159,7 @@ def extract_markdown_links(text: str) -> list[tuple[str, str]]:
         empty list.
         For example: [("anchor text", "https://example.com")]
     """
-    return re.findall(r"(?<!!)\[(.*?)\]\((https?:\/\/.*?)\)", text)
+    return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
 
 def text_to_textnodes(text: str) -> list["TextNode"]:
@@ -186,3 +186,24 @@ def text_to_textnodes(text: str) -> list["TextNode"]:
     nodes = split_nodes_image(nodes)
     nodes = split_nodes_link(nodes)
     return nodes
+
+
+def extract_title(markdown: str) -> str:
+    """Extracts the title from a markdown file.
+
+    Finds the first h1 header and returns the value as the title.
+
+    Args:
+        markdown: The markdown file to be parsed.
+
+    Returns:
+        The text to be used for the page title.
+
+    Raises:
+        Exception: If no valid title is found in the markdown file.
+    """
+    lines = markdown.split("\n")
+    for line in lines:
+        if line.startswith("# "):
+            return line[2:].strip()
+    raise Exception("markdown does not contain h1 title")

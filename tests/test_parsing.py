@@ -3,6 +3,7 @@ import unittest
 from parsing import (
     extract_markdown_images,
     extract_markdown_links,
+    extract_title,
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
@@ -198,12 +199,6 @@ class TestExtractMarkdownImages(unittest.TestCase):
         expected = [("Alt text", "https://example.com/image.png")]
         self.assertEqual(extract_markdown_images(text), expected)
 
-    def test_image_with_invalid_url(self):
-        text = "![Alt text](bad url text)"
-        self.assertEqual(extract_markdown_images(text), [])
-        text_ftp = "![Alt text](ftp://example.com/image.png)"
-        self.assertEqual(extract_markdown_images(text_ftp), [])
-
 
 class TestExtractMarkdownLinks(unittest.TestCase):
     def test_no_links(self):
@@ -233,12 +228,6 @@ class TestExtractMarkdownLinks(unittest.TestCase):
         expected = [("Link text", "https://example.com")]
         self.assertEqual(extract_markdown_links(text), expected)
 
-    def test_link_with_invalid_url(self):
-        text = "[Link text](bad url)"
-        self.assertEqual(extract_markdown_links(text), [])
-        text_ftp = "[Link text](ftp://example.com)"
-        self.assertEqual(extract_markdown_links(text_ftp), [])
-
     def test_ignore_image_syntax(self):
         """Ensure image markdown is not extracted as a link."""
         text = "This is text with an ![image link](https://example.com/img.png) and a [real link](https://example.com)."
@@ -254,11 +243,6 @@ class TestSplitNodesImage(unittest.TestCase):
 
     def test_split_image_non_text_nodes_only(self):
         nodes = [TextNode("bold text", TextType.BOLD), TextNode("italic text", TextType.ITALIC)]
-        result = split_nodes_image(nodes)
-        self.assertEqual(result, nodes)
-
-    def test_split_image_no_images(self):
-        nodes = [TextNode("This text has no images, not even ![invalid](url).", TextType.TEXT)]
         result = split_nodes_image(nodes)
         self.assertEqual(result, nodes)
 
@@ -344,12 +328,6 @@ class TestSplitNodesImage(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    def test_split_image_ignores_invalid_markdown(self):
-        node = TextNode("Text ![alt](invalid-url) ![alt2](ftp://site.com) end", TextType.TEXT)
-        result = split_nodes_image([node])
-        # Since no valid images are found, the node should remain unchanged
-        self.assertEqual(result, [node])
-
 
 class TestSplitNodesLink(unittest.TestCase):
     def test_split_link_empty_nodes(self):
@@ -359,11 +337,6 @@ class TestSplitNodesLink(unittest.TestCase):
 
     def test_split_link_non_text_nodes_only(self):
         nodes = [TextNode("bold text", TextType.BOLD), TextNode("italic text", TextType.ITALIC)]
-        result = split_nodes_link(nodes)
-        self.assertEqual(result, nodes)
-
-    def test_split_link_no_links(self):
-        nodes = [TextNode("This text has no links, not even [invalid](url).", TextType.TEXT)]
         result = split_nodes_link(nodes)
         self.assertEqual(result, nodes)
 
@@ -448,12 +421,6 @@ class TestSplitNodesLink(unittest.TestCase):
             TextNode(".", TextType.TEXT),
         ]
         self.assertEqual(result, expected)
-
-    def test_split_link_ignores_invalid_markdown(self):
-        node = TextNode("Text [anchor](invalid-url) [anchor2](ftp://site.com) end", TextType.TEXT)
-        result = split_nodes_link([node])
-        # Since no valid links are found, the node should remain unchanged
-        self.assertEqual(result, [node])
 
 
 class TestTextToTextNodes(unittest.TestCase):
@@ -606,6 +573,21 @@ class TestTextToTextNodes(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             text_to_textnodes(text)
         self.assertIn("Unmatched ** delimiter", str(context.exception))
+
+class TestExtractTitle(unittest.TestCase):
+    def test_extract_title_valid(self):
+        markdown = "# My Page Title\nSome other content"
+        self.assertEqual(extract_title(markdown), "My Page Title")
+
+    def test_extract_title_no_title(self):
+        markdown = "Some content without a title"
+        with self.assertRaises(Exception) as context:
+            extract_title(markdown)
+        self.assertEqual(str(context.exception), "markdown does not contain h1 title")
+
+    def test_extract_title_multiple_titles(self):
+        markdown = "# My Page Title\n# Another Title"
+        self.assertEqual(extract_title(markdown), "My Page Title")
 
 
 if __name__ == "__main__":

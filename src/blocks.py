@@ -165,7 +165,6 @@ def block_to_code(block: str) -> ParentNode:
     text = block[3:-3].lstrip("\n")
     raw_text_node = TextNode(text, TextType.TEXT)
     code_node = ParentNode("code", [text_node_to_html_node(raw_text_node)])
-    print(f"code_node : {code_node}")
     return ParentNode("pre", [code_node])
 
 

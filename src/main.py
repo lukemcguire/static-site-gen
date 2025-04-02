@@ -8,13 +8,14 @@ which represent HTML elements.
 Usage: python main.py
 """
 
-# from textnode import TextNode, TextType
-# import os
 import shutil
 from pathlib import Path
 
+from blocks import markdown_to_html_node
+from parsing import extract_title
 
-def copy_tree(src: Path, dest: Path) -> None:
+
+def copy_static(src: Path, dest: Path) -> None:
     """Copies the contents from a source directory to a desination directory.
 
     First deletes all files from the destination directory, then makes a copy of
@@ -67,11 +68,38 @@ def delete_files(directory: Path) -> None:
             (root / name).rmdir()
 
 
+def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None:
+    """Convert a markdown page to an html page using a specified template.
+
+    Args:
+        from_path: The path to the markdown file.
+        template_path: The path to the template file.
+        dest_path: The path to save the html file.
+    """
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    with from_path.open("rt", encoding="utf-8") as file:
+        markdown = file.read()
+    with template_path.open("rt", encoding="utf-8") as file:
+        html = file.read()
+    content = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+    html = html.replace("{{ Title }}", title)
+    html = html.replace("{{ Content }}", content)
+    # create the file and any necessary directories
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    with dest_path.open("wt", encoding="utf-8") as file:
+        file.write(html)
+
+
 def main() -> None:
     """Entry point for the static site generator."""
-    static = Path("static")
-    public = Path("public")
-    copy_tree(static, public)
+    # clean public directory and copy over static files
+    copy_static(Path("static"), Path("public"))
+    # generate a page
+    markdown = Path("content/index.md")
+    template = Path("templates/template.html")
+    html_file = Path("public/index.html")
+    generate_page(markdown, template, html_file)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ Usage: python main.py
 """
 
 import shutil
+import sys
 from pathlib import Path
 
 from blocks import markdown_to_html_node
@@ -62,7 +63,7 @@ def copy_tree(src: Path, dest: Path) -> None:
                     print(f"Error copying file '{src_file}' to '{dest_file}': {e}")
 
 
-def copy_and_convert_pages(src: Path, template_path: Path, dest: Path) -> None:
+def copy_and_convert_pages(src: Path, template_path: Path, dest: Path, basepath: str) -> None:
     """Converts all markdown files in directory tree to html.
 
     Walks through a directory and takes all markdown files, converts them to
@@ -72,6 +73,7 @@ def copy_and_convert_pages(src: Path, template_path: Path, dest: Path) -> None:
         src: The source directory path.
         template_path: The path to the template file.
         dest: The destination directory path.
+        basepath: The base path of the site for hosting.
     """
     for dirpath, _, files in src.walk():
         relative_path = dirpath.relative_to(src)
@@ -81,16 +83,17 @@ def copy_and_convert_pages(src: Path, template_path: Path, dest: Path) -> None:
                 continue
             src_file = dirpath / file
             dest_file = dest_dir / "index.html"
-            generate_page(src_file, template_path, dest_file)
+            generate_page(src_file, template_path, dest_file, basepath)
 
 
-def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None:
+def generate_page(from_path: Path, template_path: Path, dest_path: Path, basepath: str) -> None:
     """Convert a markdown page to an html page using a specified template.
 
     Args:
         from_path: The path to the markdown file.
         template_path: The path to the template file.
         dest_path: The path to save the html file.
+        basepath: The base path of the site for hosting.
     """
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     with from_path.open("rt", encoding="utf-8") as file:
@@ -101,6 +104,8 @@ def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None
     title = extract_title(markdown)
     html = html.replace("{{ Title }}", title)
     html = html.replace("{{ Content }}", content)
+    html = html.replace('href="/', f'href="{basepath}')
+    html = html.replace('src="/', f'src="{basepath}')
     # create the file and any necessary directories
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     with dest_path.open("wt", encoding="utf-8") as file:
@@ -109,16 +114,17 @@ def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None
 
 def main() -> None:
     """Entry point for the static site generator."""
-    static = Path("static")
-    content = Path("content")
-    template = Path("templates/template.html")
-    html_root = Path("public")
+    basepath = "/" if len(sys.argv) == 1 else sys.argv[1]
+    dir_path_static = Path("./static")
+    dir_path_content = Path("./content")
+    template_path = Path("./templates/template.html")
+    dir_path_public = Path("./docs")
     # clean public directory before making changes
-    delete_files(html_root)
+    delete_files(dir_path_public)
     # copy over static content
-    copy_tree(static, html_root)
+    copy_tree(dir_path_static, dir_path_public)
     # generate static html site
-    copy_and_convert_pages(content, template, html_root)
+    copy_and_convert_pages(dir_path_content, template_path, dir_path_public, basepath)
 
 
 if __name__ == "__main__":
